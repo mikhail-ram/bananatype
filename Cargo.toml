@@ -1,5 +1,5 @@
 [package]
-name = "typing_test"
+name = "bananatype"
 version = "0.1.0"
 authors = ["Mikhail <mikhailethanram@gmail.com>"]
 edition = "2018"

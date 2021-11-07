@@ -3,6 +3,16 @@
 version = 3
 
 [[package]]
+name = "bananatype"
+version = "0.1.0"
+dependencies = [
+ "crossterm 0.22.1",
+ "rand",
+ "termion",
+ "tui",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -305,16 +315,6 @@ dependencies = [
  "crossterm 0.20.0",
  "unicode-segmentation",
  "unicode-width",
-]
-
-[[package]]
-name = "typing_test"
-version = "0.1.0"
-dependencies = [
- "crossterm 0.22.1",
- "rand",
- "termion",
- "tui",
 ]
 
 [[package]]
