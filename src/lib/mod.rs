@@ -34,8 +34,31 @@ const BANANATYPE: &str = r"
 
 ";
 
-struct Settings {}
+// TODO: use structs to encode colors to generalise themes
+// TODO: separate styling from mechanics of the test
+struct Theme {
+    fg: Color,
+    bg: Color,
+    highlight: Color,
+    cursor: Color,
+    correct: Color,
+    incorrect: Color,
+}
 
+impl Theme {
+    fn new () -> Theme {
+        Theme {
+            fg: Color::DarkGray,
+            bg: Color::Reset,
+            highlight: Color::Yellow,
+            cursor: Color::Gray,
+            correct: Color::Green,
+            incorrect: Color::Red,
+        }
+    }
+}
+
+struct Settings {}
 
 pub struct TypingTest<'a> {
     text: Vec<Span<'a>>,
@@ -43,25 +66,30 @@ pub struct TypingTest<'a> {
     terminal: CrosstermTerminal,
     elapsed_seconds: f64,
     score: score::Score,
+    theme: Theme,
 }
 
 impl TypingTest<'_> {
     pub fn new() -> TypingTest<'static> {
-        let text = TypingTest::generate_text();
+        //let text = TypingTest::generate_text();
         let terminal = TypingTest::setup_terminal().unwrap();
         let score = score::Score::new();
+        let theme = Theme::new();
 
-        TypingTest {
-            text,
-            terminal,
-            position: 0,
-            elapsed_seconds: 0.0,
-            score,
-        }
+        let mut typing_test = TypingTest {
+                             text: Vec::new(),
+                             terminal,
+                             position: 0,
+                             elapsed_seconds: 0.0,
+                             score,
+                             theme,
+                         };
+
+        typing_test.generate_text();
+        typing_test
     }
 
-    // Generates test text from filepath
-    fn generate_text() -> Vec<Span<'static>> {
+    fn generate_text(&mut self) {
         let file = include_str!("words.txt");
         let file: Vec<String> = file
             .lines()
@@ -78,12 +106,12 @@ impl TypingTest<'_> {
         for num in rand_nums {
             spans.extend([
                 Span::styled(file[num].clone(),
-                             Style::default().fg(Color::DarkGray)),
-                Span::styled(" ", Style::default().fg(Color::DarkGray)),
+                             Style::default().fg(self.theme.fg)),
+                Span::styled(" ", Style::default().fg(self.theme.fg)),
             ]);
         }
 
-        spans
+        self.text = spans;
     }
 
     fn update_char(&mut self, character: char) {
@@ -97,11 +125,11 @@ impl TypingTest<'_> {
             let former = match former {
                 former if former == character => {
                     self.score.calculate_correct();
-                    Span::styled(former.to_string(), Style::default().fg(Color::Green))
+                    Span::styled(former.to_string(), Style::default().fg(self.theme.correct))
                 }
                 _ => {
                     self.score.calculate_incorrect();
-                    Span::styled(former.to_string(), Style::default().fg(Color::Red))
+                    Span::styled(former.to_string(), Style::default().fg(self.theme.incorrect))
                 }
             };
 
@@ -109,16 +137,16 @@ impl TypingTest<'_> {
                 let (cursor, latter) = latter.split_at(1);
 
                 let cursor = Span::styled(cursor.to_string(),
-                                          Style::default().bg(Color::DarkGray));
+                                          Style::default().fg(self.theme.cursor).bg(self.theme.fg));
 
                 let latter = Span::styled(latter.to_string(),
-                                          Style::default().fg(Color::DarkGray));
+                                          Style::default().fg(self.theme.fg));
 
                 self.text
                     .splice(self.position..self.position + 1, [former, cursor, latter]);
             } else {
                 let cursor = Span::styled(latter.to_string(),
-                                          Style::default().bg(Color::DarkGray));
+                                          Style::default().fg(self.theme.cursor).bg(self.theme.fg));
 
                 self.text
                     .splice(self.position..self.position + 1, [former, cursor]);
@@ -129,11 +157,11 @@ impl TypingTest<'_> {
             let former = match former {
                 former if former == character => {
                     self.score.calculate_correct();
-                    Span::styled(former.to_string(), Style::default().fg(Color::Green))
+                    Span::styled(former.to_string(), Style::default().fg(self.theme.correct))
                 }
                 _ => {
                     self.score.calculate_incorrect();
-                    Span::styled(former.to_string(), Style::default().fg(Color::Red))
+                    Span::styled(former.to_string(), Style::default().fg(self.theme.incorrect))
                 }
             };
 
@@ -141,16 +169,16 @@ impl TypingTest<'_> {
                 let (cursor, latter) = next_word.split_at(1);
 
                 let cursor = Span::styled(cursor.to_string(),
-                                          Style::default().bg(Color::DarkGray));
+                                          Style::default().fg(self.theme.cursor).bg(self.theme.fg));
 
                 let latter = Span::styled(latter.to_string(),
-                                          Style::default().fg(Color::DarkGray));
+                                          Style::default().fg(self.theme.fg));
 
                 self.text
                     .splice(self.position..self.position + 2, [former, cursor, latter]);
             } else {
                 let cursor = Span::styled(next_word.to_string(),
-                                          Style::default().bg(Color::DarkGray));
+                                          Style::default().fg(self.theme.cursor).bg(self.theme.fg));
 
                 self.text
                     .splice(self.position..self.position + 2, [former, cursor]);
@@ -158,20 +186,21 @@ impl TypingTest<'_> {
 
         }
 
+
         self.position += 1;
         self.refresh();
     }
 
     fn backspace(&mut self) {
         if self.position > 0 {
-            if self.text[self.position - 1].style.fg == Some(Color::Green) {
+            if self.text[self.position - 1].style.fg == Some(self.theme.correct) {
                 self.score.calculate_correct_backspace();
             } else {
                 self.score.calculate_incorrect_backspace();
             }
-            self.text[self.position].style = Style::default().fg(Color::DarkGray).bg(Color::Reset);
+            self.text[self.position].style = Style::default().fg(self.theme.fg).bg(self.theme.bg);
             self.position = self.position - 1;
-            self.text[self.position].style = Style::default().bg(Color::DarkGray);
+            self.text[self.position].style = Style::default().fg(self.theme.cursor).bg(self.theme.fg);
         }
         self.refresh();
     }
@@ -182,13 +211,13 @@ impl TypingTest<'_> {
                 "Time",
                 Style::default().add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::DarkGray))
+            .border_style(Style::default().fg(self.theme.fg))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
         let progress = Gauge::default()
             .block(time_block)
-            .gauge_style(Style::default().fg(Color::DarkGray))
+            .gauge_style(Style::default().fg(self.theme.fg))
             .ratio(self.elapsed_seconds / TEST_DURATION)
             .label(format!(
                 "{}",
@@ -199,10 +228,10 @@ impl TypingTest<'_> {
             .title(Span::styled(
                 "Gross WPM",
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(self.theme.fg)
                     .add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::DarkGray))
+            .border_style(Style::default().fg(self.theme.fg))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
@@ -212,7 +241,7 @@ impl TypingTest<'_> {
                 self.score.calculate_gross_wpm(self.elapsed_seconds)
             ),
             Style::default()
-                .fg(Color::DarkGray)
+                .fg(self.theme.fg)
                 .add_modifier(Modifier::BOLD),
         ))
         .block(gross_wpm_block)
@@ -223,17 +252,17 @@ impl TypingTest<'_> {
             .title(Span::styled(
                 "Net WPM",
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(self.theme.fg)
                     .add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::DarkGray))
+            .border_style(Style::default().fg(self.theme.fg))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
         let net_wpm = Paragraph::new(Span::styled(
             format!("{:.1}", self.score.calculate_net_wpm(self.elapsed_seconds)),
             Style::default()
-                .fg(Color::DarkGray)
+                .fg(self.theme.fg)
                 .add_modifier(Modifier::BOLD),
         ))
         .block(net_wpm_block)
@@ -244,17 +273,17 @@ impl TypingTest<'_> {
             .title(Span::styled(
                 "Accuracy",
                 Style::default()
-                    .fg(Color::DarkGray)
+                    .fg(self.theme.fg)
                     .add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::DarkGray))
+            .border_style(Style::default().fg(self.theme.fg))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
         let accuracy = Paragraph::new(Span::styled(
             format!("{:.1}", self.score.calculate_accuracy()),
             Style::default()
-                .fg(Color::DarkGray)
+                .fg(self.theme.fg)
                 .add_modifier(Modifier::BOLD),
         ))
         .block(accuracy_block)
@@ -265,10 +294,10 @@ impl TypingTest<'_> {
             .title(Span::styled(
                 "BananaType",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(self.theme.highlight)
                     .add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::Yellow))
+            .border_style(Style::default().fg(self.theme.highlight))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
@@ -303,11 +332,23 @@ impl TypingTest<'_> {
                 )
                 .split(layout[1]);
 
+            let text_layout = Layout::default()
+                .direction(Direction::Vertical)
+                //.margin(2)
+                .constraints(
+                    [
+                        Constraint::Ratio(1, 1),
+                    ]
+                    .as_ref(),
+                )
+                .split(layout[2]);
+
             frame.render_widget(progress, layout[0]);
             frame.render_widget(gross_wpm, live_stats_layout[0]);
             frame.render_widget(net_wpm, live_stats_layout[1]);
             frame.render_widget(accuracy, live_stats_layout[2]);
-            frame.render_widget(text, layout[2]);
+            frame.render_widget(text, text_layout[0]);
+            //frame.render_widget(text, layout[0]);
         })?;
 
         Ok(())
@@ -340,7 +381,7 @@ impl TypingTest<'_> {
     }
 
     fn reset(&mut self) {
-        self.text = TypingTest::generate_text();
+        self.generate_text();
         self.score = score::Score::new();
         self.position = 0;
         self.elapsed_seconds = 0.0;
@@ -351,10 +392,10 @@ impl TypingTest<'_> {
             .title(Span::styled(
                 "Your Results",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(self.theme.highlight)
                     .add_modifier(Modifier::BOLD),
             ))
-            .border_style(Style::default().fg(Color::Yellow))
+            .border_style(Style::default().fg(self.theme.highlight))
             .borders(Borders::ALL)
             .border_type(BorderType::Thick);
 
@@ -402,7 +443,7 @@ impl TypingTest<'_> {
         let mut restart = false;
 
         loop {
-            if poll(Duration::from_millis(500)).unwrap() {
+            if poll(Duration::from_millis(((1.0 / TIMER_REFRESH_RATE) * 1000.0).round() as u64)).unwrap() {
                 if let Event::Key(event) = read().unwrap() {
                     match event.code {
                         KeyCode::Esc => {
@@ -451,7 +492,7 @@ impl TypingTest<'_> {
                 }
             }
 
-            if poll(Duration::from_millis(500)).unwrap() {
+            if poll(Duration::from_millis(((1.0 / TIMER_REFRESH_RATE) * 1000.0).round() as u64)).unwrap() {
                 if let Event::Key(event) = read().unwrap() {
                     if self.elapsed_seconds == 0.0 {
                         rx = TypingTest::start_timer();
