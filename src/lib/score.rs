@@ -26,8 +26,10 @@ impl Score {
         if elapsed_seconds == 0.0 {
             0.0
         } else {
-            self.calculate_gross_wpm(elapsed_seconds)
-                - (self.incorrect_characters / (elapsed_seconds / 60.0))
+            let net_wpm = self.calculate_gross_wpm(elapsed_seconds)
+                - (self.incorrect_characters / (elapsed_seconds / 60.0));
+            if net_wpm > 0.0 { net_wpm }
+            else { 0.0 }
         }
     }
 
