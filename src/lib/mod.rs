@@ -509,8 +509,8 @@ impl TypingTest<'_> {
                 .direction(Direction::Vertical)
                 .constraints(
                     [
-                        Constraint::Ratio(1, 6),
-                        Constraint::Ratio(5, 6),
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(3, 4),
                         Constraint::Min(15),
                     ]
                     .as_ref(),

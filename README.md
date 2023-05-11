@@ -1,10 +1,11 @@
 # Bananatype
 
+![](https://github.com/mikhail-ram/bananatype/usage.gif)
+
 Bananatype is a terminal-based typing test, inspired by [monkeytype](https://monkeytype.com) and built in Rust 🦀.
 
 ## Installation
 
-![](https://github.com/mikhail-ram/bananatype/usage.gif)
 Installing the project requires ```cargo``` to be installed on your system. If cargo is not installed see [here](https://doc.rust-lang.org/cargo/getting-started/installation.html).
 
 To install and try out bananatype, clone this repository locally and run it with Cargo.
