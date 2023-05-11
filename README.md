@@ -1,6 +1,6 @@
 # Bananatype
 
-![](https://github.com/mikhail-ram/bananatype/usage.gif)
+![](usage.gif)
 
 Bananatype is a terminal-based typing test, inspired by [monkeytype](https://monkeytype.com) and built in Rust 🦀.
 
