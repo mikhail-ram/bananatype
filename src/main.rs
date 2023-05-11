@@ -4,6 +4,7 @@
 // TODO: Add more words when all words are typed
 // TODO: Check if any words were typed or if person is afk
 // TODO: Add line graph at summary page to get statistics
+// TODO: Move final stas (net wpm, gross wpm and accuracy to 3 columns)
 // TODO: simulate Ctrl+PLUS to increase font size of terminal
 
 /* For MacOS
